@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b0b10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Makeup Transfer</title>
+<style>
+  :root {
+    --bg: #0b0b10;
+    --panel: #16161e;
+    --panel-2: #1f1f2b;
+    --text: #ececf2;
+    --muted: #8b8ba0;
+    --accent: #e478b3;
+    --accent-2: #8a5cf6;
+    --danger: #ff6b6b;
+    --ok: #4ade80;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px; line-height: 1.4;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  header {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; padding-top: calc(14px + env(safe-area-inset-top));
+    background: linear-gradient(180deg, #15151fee, #15151faa);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #ffffff10;
+  }
+  header h1 {
+    margin: 0; font-size: 17px; font-weight: 600; letter-spacing: 0.2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .icon-btn {
+    background: transparent; border: 0; color: var(--text); font-size: 20px;
+    padding: 6px 10px; border-radius: 8px; cursor: pointer;
+  }
+  .icon-btn:active { background: #ffffff14; }
+  main { padding: 14px; display: flex; flex-direction: column; gap: 14px; max-width: 720px; margin: 0 auto; }
+  .card { background: var(--panel); border-radius: var(--radius); padding: 14px; border: 1px solid #ffffff0c; }
+  .card h2 { margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .seg {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--panel-2);
+    padding: 4px; border-radius: 10px;
+  }
+  .seg input { display: none; }
+  .seg label {
+    text-align: center; padding: 10px 8px; border-radius: 8px; cursor: pointer;
+    font-size: 14px; font-weight: 500; color: var(--muted); transition: 0.15s;
+  }
+  .seg input:checked + label,
+  .seg label:has(input:checked) { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+  .seg-hint { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .images { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .slot {
+    position: relative; aspect-ratio: 3/4; background: var(--panel-2);
+    border-radius: 12px; overflow: hidden; border: 1px dashed #ffffff20;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .slot input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .slot img { width: 100%; height: 100%; object-fit: cover; }
+  .slot .ph { color: var(--muted); font-size: 13px; text-align: center; padding: 12px; pointer-events: none; }
+  .slot .ph .big { font-size: 28px; display: block; margin-bottom: 6px; }
+  .slot .badge {
+    position: absolute; top: 8px; left: 8px;
+    background: #000000aa; color: #fff; font-size: 11px; padding: 4px 8px;
+    border-radius: 999px; font-weight: 500; letter-spacing: 0.04em;
+  }
+  .slot .clear {
+    position: absolute; top: 8px; right: 8px;
+    background: #000000aa; color: #fff; border: 0; font-size: 16px;
+    width: 26px; height: 26px; border-radius: 999px; cursor: pointer; display: none;
+  }
+  .slot.has-img .clear { display: block; }
+  .slot.has-img .ph { display: none; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row label { font-size: 14px; color: var(--muted); flex: 0 0 auto; }
+  input[type=range] { flex: 1; accent-color: var(--accent); }
+  textarea, input[type=text], input[type=password] {
+    width: 100%; background: var(--panel-2); border: 1px solid #ffffff14;
+    color: var(--text); border-radius: 10px; padding: 10px 12px; font-size: 14px;
+    font-family: inherit; resize: vertical;
+  }
+  textarea { min-height: 80px; }
+  .btn {
+    width: 100%; padding: 16px; border: 0; border-radius: 12px; cursor: pointer;
+    font-size: 16px; font-weight: 600; color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 4px 18px #8a5cf640;
+    transition: 0.15s;
+  }
+  .btn:active { transform: scale(0.985); }
+  .btn[disabled] { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+  .btn.secondary {
+    background: var(--panel-2); color: var(--text); box-shadow: none;
+    border: 1px solid #ffffff14;
+  }
+  #status { font-size: 13px; color: var(--muted); text-align: center; min-height: 18px; }
+  #status.err { color: var(--danger); }
+  #status.ok { color: var(--ok); }
+  .spinner {
+    display: inline-block; width: 12px; height: 12px;
+    border: 2px solid #ffffff20; border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #result { display: none; }
+  #result.show { display: block; }
+  #result img { width: 100%; border-radius: 12px; display: block; }
+  .result-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  dialog {
+    border: 0; border-radius: 16px; background: var(--panel); color: var(--text);
+    padding: 18px; width: min(420px, calc(100% - 24px));
+    box-shadow: 0 20px 60px #00000080;
+  }
+  dialog::backdrop { background: #000000aa; backdrop-filter: blur(4px); }
+  dialog h2 { margin: 0 0 14px 0; font-size: 16px; }
+  dialog .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  dialog .field label { font-size: 13px; color: var(--muted); }
+  dialog .help { font-size: 12px; color: var(--muted); margin: -8px 0 14px 0; }
+  dialog .help a { color: var(--accent); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Makeup Transfer</h1>
+  <button class="icon-btn" id="settings-btn" aria-label="Settings">⚙</button>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Provider</h2>
+    <div class="seg" id="provider-seg">
+      <label><input type="radio" name="provider" value="stable" checked><span>Stable-Makeup · free</span></label>
+      <label><input type="radio" name="provider" value="flux"><span>FLUX Kontext · fal.ai</span></label>
+    </div>
+    <div class="seg-hint" id="provider-hint"></div>
+  </div>
+
+  <div class="card">
+    <h2>Images</h2>
+    <div class="images">
+      <div class="slot" id="slot-makeup">
+        <div class="badge">Makeup</div>
+        <button class="clear" type="button" data-target="makeup" aria-label="Clear">×</button>
+        <div class="ph"><span class="big">💄</span>Tap to pick<br>the look</div>
+        <input type="file" accept="image/*" id="file-makeup">
+      </div>
+      <div class="slot" id="slot-target">
+        <div class="badge">Target</div>
+        <button class="clear" type="button" data-target="target" aria-label="Clear">×</button>
+        <div class="ph"><span class="big">🙂</span>Tap to pick<br>your face</div>
+        <input type="file" accept="image/*" id="file-target">
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-stable">
+    <h2>Stable-Makeup settings</h2>
+    <div class="row">
+      <label for="guidance">Guidance</label>
+      <input type="range" id="guidance" min="1.01" max="3" step="0.01" value="1.6">
+      <span id="guidance-val" style="width:36px;text-align:right;font-variant-numeric:tabular-nums">1.60</span>
+    </div>
+  </div>
+
+  <div class="card hidden" id="card-flux">
+    <h2>FLUX Kontext prompt</h2>
+    <textarea id="prompt">Apply the makeup style from image 2 to the face in image 1. Keep the identity, hair, skin tone, and background of image 1 unchanged. Match the lipstick color, eyeshadow, eyeliner, blush, and overall makeup intensity from image 2 as closely as possible. Photorealistic, sharp focus.</textarea>
+  </div>
+
+  <button class="btn" id="run">Apply Makeup</button>
+  <div id="status"></div>
+
+  <div id="result" class="card">
+    <h2>Result</h2>
+    <img id="result-img" alt="Result">
+    <div class="result-actions">
+      <a class="btn secondary" id="download" download="makeup-result.png" style="text-align:center;text-decoration:none;line-height:1.4;padding:12px">Download</a>
+      <button class="btn secondary" id="use-as-target" type="button">Use as target →</button>
+    </div>
+  </div>
+</main>
+
+<dialog id="settings-dlg">
+  <h2>Settings</h2>
+  <div class="field">
+    <label for="fal-key">fal.ai API key</label>
+    <input type="password" id="fal-key" autocomplete="off" placeholder="key_id:key_secret">
+  </div>
+  <p class="help">Get a key at <a href="https://fal.ai/dashboard/keys" target="_blank" rel="noopener">fal.ai/dashboard/keys</a>. Stored only in this browser's localStorage; sent only to fal.ai.</p>
+  <div class="field">
+    <label for="fal-model">fal.ai model slug</label>
+    <input type="text" id="fal-model" value="fal-ai/flux-pro/kontext/max/multi">
+  </div>
+  <p class="help">Default is FLUX Kontext Max (multi-image). Other options: <code>fal-ai/flux-pro/kontext/multi</code>, <code>fal-ai/nano-banana/edit</code>.</p>
+  <button class="btn" id="settings-close" type="button">Done</button>
+</dialog>
+
+<script>
+"use strict";
+
+const HF_BASE = "https://sky24h-stable-makeup-unofficial.hf.space";
+const FAL_BASE = "https://fal.run";
+const MAX_DIM = 1024;
+const LS_FAL_KEY = "mk_fal_key";
+const LS_FAL_MODEL = "mk_fal_model";
+
+const state = {
+  provider: "stable",
+  images: { makeup: null, target: null },
+};
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+function setStatus(text, kind) {
+  const el = $("#status");
+  el.className = kind || "";
+  el.innerHTML = kind === "loading" ? `<span class="spinner"></span>${text}` : text;
+}
+
+function setProvider(p) {
+  state.provider = p;
+  $("#card-stable").classList.toggle("hidden", p !== "stable");
+  $("#card-flux").classList.toggle("hidden", p !== "flux");
+  $("#provider-hint").textContent = p === "stable"
+    ? "Free HuggingFace Space. First call may take ~30–60s while it wakes up."
+    : "Uses your fal.ai key. ~$0.04 per image. Open settings to add the key.";
+}
+
+async function fileToResizedBlob(file, maxDim = MAX_DIM, type = "image/jpeg", quality = 0.92) {
+  const img = await new Promise((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = URL.createObjectURL(file);
+  });
+  let { width, height } = img;
+  if (width > maxDim || height > maxDim) {
+    const scale = maxDim / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, width, height);
+  URL.revokeObjectURL(img.src);
+  return await new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+}
+
+async function handleFilePick(which, file) {
+  if (!file) return;
+  setStatus("Preparing image…", "loading");
+  try {
+    const blob = await fileToResizedBlob(file);
+    const dataUrl = await blobToDataUrl(blob);
+    state.images[which] = { blob, dataUrl };
+    const slot = $(`#slot-${which}`);
+    slot.classList.add("has-img");
+    let img = slot.querySelector("img.preview");
+    if (!img) {
+      img = document.createElement("img");
+      img.className = "preview";
+      slot.prepend(img);
+    }
+    img.src = dataUrl;
+    setStatus("");
+  } catch (e) {
+    setStatus("Couldn't read that image. Try another.", "err");
+    console.error(e);
+  }
+}
+
+function clearImage(which) {
+  state.images[which] = null;
+  const slot = $(`#slot-${which}`);
+  slot.classList.remove("has-img");
+  const img = slot.querySelector("img.preview");
+  if (img) img.remove();
+  $(`#file-${which}`).value = "";
+}
+
+function showResult(url) {
+  $("#result-img").src = url;
+  $("#download").href = url;
+  $("#result").classList.add("show");
+  $("#result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ---------- Stable-Makeup via HuggingFace Space ----------
+
+async function hfUpload(blob, filename) {
+  const fd = new FormData();
+  fd.append("files", blob, filename);
+  const r = await fetch(`${HF_BASE}/upload`, { method: "POST", body: fd });
+  if (!r.ok) throw new Error(`Upload failed: ${r.status}`);
+  const arr = await r.json();
+  return arr[0];
+}
+
+async function hfCallAndAwait(apiName, dataArr) {
+  const r = await fetch(`${HF_BASE}/call/${apiName}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data: dataArr }),
+  });
+  if (!r.ok) throw new Error(`Call failed: ${r.status} ${await r.text()}`);
+  const { event_id } = await r.json();
+  if (!event_id) throw new Error("No event_id returned");
+
+  const resp = await fetch(`${HF_BASE}/call/${apiName}/${event_id}`);
+  if (!resp.ok || !resp.body) throw new Error(`Stream failed: ${resp.status}`);
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let currentEvent = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let nlIdx;
+    while ((nlIdx = buffer.indexOf("\n")) !== -1) {
+      const line = buffer.slice(0, nlIdx).replace(/\r$/, "");
+      buffer = buffer.slice(nlIdx + 1);
+      if (line.startsWith("event:")) {
+        currentEvent = line.slice(6).trim();
+      } else if (line.startsWith("data:")) {
+        const data = line.slice(5).trim();
+        if (currentEvent === "complete") {
+          try { return JSON.parse(data); } catch { return data; }
+        }
+        if (currentEvent === "error") {
+          throw new Error(`Space error: ${data}`);
+        }
+        // "generating" / "heartbeat" events ignored
+      } else if (line === "") {
+        currentEvent = null;
+      }
+    }
+  }
+  throw new Error("Stream ended without complete event");
+}
+
+async function runStableMakeup() {
+  const { makeup, target } = state.images;
+  const guidance = parseFloat($("#guidance").value);
+
+  setStatus("Uploading images…", "loading");
+  const [idPath, makeupPath] = await Promise.all([
+    hfUpload(target.blob, "target.jpg"),
+    hfUpload(makeup.blob, "makeup.jpg"),
+  ]);
+
+  setStatus("Running Stable-Makeup… (first run can take ~60s while the Space wakes)", "loading");
+  const fileData = (path) => ({ path, meta: { _type: "gradio.FileData" } });
+  const result = await hfCallAndAwait("predict", [fileData(idPath), fileData(makeupPath), guidance]);
+
+  // result is typically an array; the first element is the output image FileData
+  const out = Array.isArray(result) ? result[0] : result;
+  const url = out?.url || (out?.path ? `${HF_BASE}/file=${out.path}` : null);
+  if (!url) throw new Error("No output URL in response");
+  return url;
+}
+
+// ---------- FLUX Kontext via fal.ai ----------
+
+async function runFluxKontext() {
+  const key = localStorage.getItem(LS_FAL_KEY) || "";
+  const model = localStorage.getItem(LS_FAL_MODEL) || "fal-ai/flux-pro/kontext/max/multi";
+  if (!key) {
+    $("#settings-dlg").showModal();
+    throw new Error("Add your fal.ai API key in settings first.");
+  }
+  const { makeup, target } = state.images;
+  const prompt = $("#prompt").value.trim();
+  if (!prompt) throw new Error("Prompt is empty.");
+
+  setStatus("Calling fal.ai…", "loading");
+  const r = await fetch(`${FAL_BASE}/${model}`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Key ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt,
+      image_urls: [target.dataUrl, makeup.dataUrl],
+      num_images: 1,
+      output_format: "jpeg",
+    }),
+  });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const msg = body?.detail || body?.error || JSON.stringify(body);
+    throw new Error(`fal.ai ${r.status}: ${msg}`);
+  }
+  const url = body?.images?.[0]?.url;
+  if (!url) throw new Error("No image URL in fal.ai response");
+  return url;
+}
+
+// ---------- Wire up ----------
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Provider toggle
+  $$('input[name="provider"]').forEach((el) =>
+    el.addEventListener("change", (e) => setProvider(e.target.value))
+  );
+  setProvider("stable");
+
+  // File pickers
+  $("#file-makeup").addEventListener("change", (e) => handleFilePick("makeup", e.target.files[0]));
+  $("#file-target").addEventListener("change", (e) => handleFilePick("target", e.target.files[0]));
+
+  // Clear buttons
+  $$(".slot .clear").forEach((b) =>
+    b.addEventListener("click", (e) => { e.stopPropagation(); clearImage(b.dataset.target); })
+  );
+
+  // Guidance display
+  const gv = $("#guidance-val");
+  $("#guidance").addEventListener("input", (e) => { gv.textContent = parseFloat(e.target.value).toFixed(2); });
+
+  // Settings dialog
+  const dlg = $("#settings-dlg");
+  $("#settings-btn").addEventListener("click", () => {
+    $("#fal-key").value = localStorage.getItem(LS_FAL_KEY) || "";
+    $("#fal-model").value = localStorage.getItem(LS_FAL_MODEL) || "fal-ai/flux-pro/kontext/max/multi";
+    dlg.showModal();
+  });
+  $("#settings-close").addEventListener("click", () => {
+    const k = $("#fal-key").value.trim();
+    const m = $("#fal-model").value.trim() || "fal-ai/flux-pro/kontext/max/multi";
+    if (k) localStorage.setItem(LS_FAL_KEY, k); else localStorage.removeItem(LS_FAL_KEY);
+    localStorage.setItem(LS_FAL_MODEL, m);
+    dlg.close();
+  });
+
+  // Use as target
+  $("#use-as-target").addEventListener("click", async () => {
+    const url = $("#result-img").src;
+    if (!url) return;
+    setStatus("Loading result as new target…", "loading");
+    try {
+      const resp = await fetch(url, { mode: "cors" });
+      const blob = await resp.blob();
+      await handleFilePick("target", new File([blob], "previous-result.png", { type: blob.type || "image/png" }));
+    } catch (e) {
+      setStatus("Could not reuse result (CORS). Download and re-upload instead.", "err");
+    }
+  });
+
+  // Run
+  $("#run").addEventListener("click", async () => {
+    if (!state.images.makeup || !state.images.target) {
+      setStatus("Pick both a makeup and a target image first.", "err");
+      return;
+    }
+    $("#run").disabled = true;
+    $("#result").classList.remove("show");
+    try {
+      const url = state.provider === "stable" ? await runStableMakeup() : await runFluxKontext();
+      showResult(url);
+      setStatus("Done.", "ok");
+    } catch (e) {
+      console.error(e);
+      setStatus(e.message || String(e), "err");
+    } finally {
+      $("#run").disabled = false;
+    }
+  });
+});
+</script>
+</body>
+</html>
