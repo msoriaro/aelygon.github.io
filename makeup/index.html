@@ -378,10 +378,15 @@ async function runStableMakeup() {
   const fileData = (path) => ({ path, meta: { _type: "gradio.FileData" } });
   const result = await hfCallAndAwait("predict", [fileData(idPath), fileData(makeupPath), guidance]);
 
-  // result is typically an array; the first element is the output image FileData
+  // result is typically an array; the first element is the output image FileData.
+  // The Space's returned `url` field uses a /c/file= prefix that 404s on this
+  // Gradio version — reconstruct from `path` using the working /file= endpoint.
   const out = Array.isArray(result) ? result[0] : result;
-  const url = out?.url || (out?.path ? `${HF_BASE}/file=${out.path}` : null);
-  if (!url) throw new Error("No output URL in response");
+  const url = out?.path ? `${HF_BASE}/file=${out.path}` : out?.url || null;
+  if (!url) {
+    console.error("Stable-Makeup response:", result);
+    throw new Error("No output path in response");
+  }
   return url;
 }
 
